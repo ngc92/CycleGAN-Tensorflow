@@ -10,6 +10,8 @@ from generator import Generator
 from discriminator import Discriminator
 from utils import logger
 
+import modeldef
+
 
 class HistoryQueue(object):
     def __init__(self, shape=[128,128,3], size=50):
@@ -51,7 +53,7 @@ class CycleGAN(object):
 
         self.is_train = tf.placeholder(tf.bool, name='is_train')
         self.lr = tf.placeholder(tf.float32, name='lr')
-        self.global_step = tf.contrib.framework.get_or_create_global_step(graph=None)
+        self.global_step = tf.train.get_or_create_global_step(graph=None)
 
         image_a = self.image_a = \
             tf.placeholder(tf.float32, [self._batch_size] + self._image_shape, name='image_a')
@@ -94,6 +96,11 @@ class CycleGAN(object):
         image_ba = self.image_ba = G_ba(image_b)
         image_bab = self.image_bab = G_ab(image_ba)
 
+        self.image_tensors = modeldef.ImageTensors(self.image_a, self.image_b, self.image_ab, self.image_ba,
+                                                   self.image_aba, self.image_bab)
+
+
+
         # Discriminate real/fake images
         D_real_a = D_a(image_a)
         D_fake_a = D_a(image_ba)
@@ -116,6 +123,11 @@ class CycleGAN(object):
         loss_rec_aba = tf.reduce_mean(tf.abs(image_a - image_aba))
         loss_rec_bab = tf.reduce_mean(tf.abs(image_b - image_bab))
         loss_cycle = self._cycle_loss_coeff * (loss_rec_aba + loss_rec_bab)
+
+        self.loss_rec_aba = loss_rec_aba
+        self.loss_rec_bab = loss_rec_bab
+
+        self.loss_tensors = modeldef.LossTensors(loss_G_ab, loss_G_ba, loss_D_a, loss_D_b, loss_rec_aba, loss_rec_bab)
 
         # adversarial stability: reconstruction
         perturbation_ab = tf.gradients(loss_rec_aba, image_ab)[0]
@@ -265,3 +277,10 @@ class CycleGAN(object):
             images = np.concatenate((image_b, image_ba, image_bab), axis=2)
             images = np.squeeze(images, axis=0)
             imsave(os.path.join(base_dir, 'b_to_a_{}.jpg'.format(step)), images)
+
+    def get_modeldef(self):
+        def _get_names(tpl):
+            return map(lambda x: x.name, tpl)
+        image_tensors = modeldef.ImageTensors(*_get_names(self.image_tensors))
+        loss_tensors = modeldef.ImageTensors(*_get_names(self.loss_tensors))
+        return modeldef.CylceGanModelDef(image_tensors, loss_tensors)
