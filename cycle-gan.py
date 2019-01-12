@@ -19,6 +19,8 @@ parser.add_argument('--task', type=str, default='apple2orange',
                     help='Task name')
 parser.add_argument('--cycle_loss_coeff', type=float, default=10,
                     help='Cycle Consistency Loss coefficient')
+parser.add_argument('--perturbation_loss_coeff', type=float, default=0.5,
+                    help='Perturbation Invariance Loss coefficient')
 parser.add_argument('--instance_normalization', default=True, type=bool,
                     help="Use instance norm instead of batch norm")
 parser.add_argument('--log_step', default=100, type=int,

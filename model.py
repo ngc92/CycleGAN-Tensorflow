@@ -44,6 +44,7 @@ class CycleGAN(object):
         self._batch_size = args.batch_size
         self._image_size = args.image_size
         self._cycle_loss_coeff = args.cycle_loss_coeff
+        self._perturbation_loss_coeff = args.perturbation_loss_coeff
 
         self._augment_size = self._image_size + (30 if self._image_size == 256 else 15)
         self._image_shape = [self._image_size, self._image_size, 3]
@@ -101,13 +102,13 @@ class CycleGAN(object):
         D_history_fake_a = D_a(history_fake_a)
         D_history_fake_b = D_b(history_fake_b)
 
-        # Least squre loss for GAN discriminator
+        # Least square loss for GAN discriminator
         loss_D_a = (tf.reduce_mean(tf.squared_difference(D_real_a, 0.9)) +
             tf.reduce_mean(tf.square(D_history_fake_a))) * 0.5
         loss_D_b = (tf.reduce_mean(tf.squared_difference(D_real_b, 0.9)) +
             tf.reduce_mean(tf.square(D_history_fake_b))) * 0.5
 
-        # Least squre loss for GAN generator
+        # Least square loss for GAN generator
         loss_G_ab = tf.reduce_mean(tf.squared_difference(D_fake_b, 0.9))
         loss_G_ba = tf.reduce_mean(tf.squared_difference(D_fake_a, 0.9))
 
@@ -116,8 +117,22 @@ class CycleGAN(object):
         loss_rec_bab = tf.reduce_mean(tf.abs(image_b - image_bab))
         loss_cycle = self._cycle_loss_coeff * (loss_rec_aba + loss_rec_bab)
 
-        loss_G_ab_final = loss_G_ab + loss_cycle
-        loss_G_ba_final = loss_G_ba + loss_cycle
+        # adversarial stability: reconstruction
+        perturbation_ab = tf.gradients(loss_rec_aba, image_ab)[0]
+        perturbation_ba = tf.gradients(loss_rec_bab, image_ba)[0]
+        epsilon = 1.0 / 255
+        perturbed_ab = tf.stop_gradient(image_ab + epsilon * tf.sign(perturbation_ab))
+        perturbed_ba = tf.stop_gradient(image_ba + epsilon * tf.sign(perturbation_ba))
+        # we want that the perturbed images produce the same reconstruction
+        rec_p_aba = G_ba(perturbed_ab)
+        rec_p_bab = G_ab(perturbed_ba)
+
+        loss_rec_p_aba = tf.reduce_mean(tf.abs(image_a - rec_p_aba))
+        loss_rec_p_bab = tf.reduce_mean(tf.abs(image_b - rec_p_bab))
+        loss_p_cycle = self._perturbation_loss_coeff * self._cycle_loss_coeff * (loss_rec_p_aba + loss_rec_p_bab)
+
+        loss_G_ab_final = loss_G_ab + loss_cycle + loss_p_cycle
+        loss_G_ba_final = loss_G_ba + loss_cycle + loss_p_cycle
 
         # Optimizer
         self.optimizer_D_a = tf.train.AdamOptimizer(learning_rate=self.lr, beta1=0.5) \
@@ -140,7 +155,16 @@ class CycleGAN(object):
         tf.summary.scalar('loss/dis_B', loss_D_b)
         tf.summary.scalar('loss/gen_AB', loss_G_ab)
         tf.summary.scalar('loss/gen_BA', loss_G_ba)
+        tf.summary.scalar('loss/rec_ABA', loss_rec_aba)
+        tf.summary.scalar('loss/rec_BAB', loss_rec_bab)
+        tf.summary.scalar('loss/pert_ABA', loss_rec_p_aba)
+        tf.summary.scalar('loss/pert_BAB', loss_rec_p_bab)
         tf.summary.scalar('loss/cycle', loss_cycle)
+        tf.summary.scalar('loss/perturbation', loss_p_cycle)
+
+        tf.summary.scalar('grad/pert_AB', tf.global_norm([perturbation_ab]))
+        tf.summary.scalar('grad/pert_BA', tf.global_norm([perturbation_ba]))
+
         tf.summary.scalar('model/D_a_real', tf.reduce_mean(D_real_a))
         tf.summary.scalar('model/D_a_fake', tf.reduce_mean(D_fake_a))
         tf.summary.scalar('model/D_b_real', tf.reduce_mean(D_real_b))
