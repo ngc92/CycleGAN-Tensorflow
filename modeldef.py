@@ -45,5 +45,5 @@ class CycleGanModelDef:
 
         data = json.load(source)
         image_tensors = ImageTensors(**data["image_tensors"])
-        loss_tensors = ImageTensors(**data["loss_tensors"])
+        loss_tensors = LossTensors(**data["loss_tensors"])
         return CycleGanModelDef(image_tensors, loss_tensors)
