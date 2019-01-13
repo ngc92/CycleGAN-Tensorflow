@@ -80,8 +80,6 @@ def run(args):
     if args.train:
         logger.info("Starting training session.")
         with sv.managed_session() as sess:
-            saver.save(sess, logdir, write_meta_graph=True)
-            exit(0)
             model.train(sess, summary_writer, train_A, train_B)
 
     logger.info("Starting testing session.")

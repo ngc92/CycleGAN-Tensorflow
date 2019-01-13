@@ -63,8 +63,6 @@ class NoiseRobustness:
 
 def main():
     parser = argparse.ArgumentParser(description="Run commands")
-    parser.add_argument('-t', '--train', default=True, type=bool,
-                        help="Training mode")
     parser.add_argument('--task', type=str, default='apple2orange',
                         help='Task name')
     parser.add_argument('--image_size', default=128, type=int,
@@ -81,15 +79,17 @@ def main():
     logdir = os.path.join(logdir, args.model)
 
     with tf.Session() as session:
-        saver = tf.train.import_meta_graph(logdir)
+        latest_checkpoint = tf.train.latest_checkpoint(logdir)  # type: str
+        saver = tf.train.import_meta_graph(latest_checkpoint + ".meta")
         saver.restore(session, logdir)
 
         experiment = NoiseRobustness(CycleGanModelDef.from_json("cyclegan_model.json"), session)
         noise_levels = np.linspace(0.0, 0.05, 20)
         base, noise, idiff = experiment.reconstruction_loss_a(test_A, noise_levels)
+
         print(np.mean(base))
-        print(np.mean(noise, axis=0))
-        print(np.mean(idiff, axis=0))
+        result_data = [noise_levels, np.mean(noise, axis=0), np.mean(idiff, axis=0)]
+        np.savetxt(os.path.join(logdir, "robustness.txt"), result_data)
 
 
 if __name__ == "__main__":
