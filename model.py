@@ -282,5 +282,5 @@ class CycleGAN(object):
         def _get_names(tpl):
             return map(lambda x: x.name, tpl)
         image_tensors = modeldef.ImageTensors(*_get_names(self.image_tensors))
-        loss_tensors = modeldef.ImageTensors(*_get_names(self.loss_tensors))
+        loss_tensors = modeldef.LossTensors(*_get_names(self.loss_tensors))
         return modeldef.CylceGanModelDef(image_tensors, loss_tensors)

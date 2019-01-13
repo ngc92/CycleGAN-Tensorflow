@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
-from .modeldef import CylceGanModelDef
+from modeldef import CylceGanModelDef
 from utils import logger, makedirs
 from model import CycleGAN
 from data_loader import get_data
