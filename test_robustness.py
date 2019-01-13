@@ -46,7 +46,7 @@ class NoiseRobustness:
             fetches = [target_image_t, reconstruction_loss_t]
             source_image_v = np.expand_dims(data, axis=0)
 
-            image_ab, loss = session.run(fetches, feed_dict={source_image_ph: source_image_v, "is_train": False})
+            image_ab, loss = session.run(fetches, feed_dict={source_image_ph: source_image_v, "is_train:0": False})
             noise = np.random.randn(*image_ab.shape)
 
             base_loss[i] = loss
@@ -54,7 +54,7 @@ class NoiseRobustness:
             for j, noise_level in enumerate(noise_levels):
                 perturbed = image_ab + noise * noise_level
 
-                loss = session.run(reconstruction_loss_t, feed_dict={target_image_t: perturbed, "is_train": False})
+                loss = session.run(reconstruction_loss_t, feed_dict={target_image_t: perturbed, "is_train:0": False})
                 noise_loss[i, j] = loss
 
         return base_loss, noise_loss
