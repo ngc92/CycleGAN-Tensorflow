@@ -47,7 +47,9 @@ class NoiseRobustness:
             source_image_v = np.expand_dims(data, axis=0)
 
             image_ab, loss = session.run(fetches, feed_dict={source_image_ph: source_image_v, "is_train:0": False})
+            print(np.max(image_ab))
             noise = np.random.randn(*image_ab.shape)
+            print(np.max(np.abs(noise)))
 
             base_loss[i] = loss
 
