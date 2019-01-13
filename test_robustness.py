@@ -64,7 +64,7 @@ class NoiseRobustness:
                                  feed_dict={source_image_ph: source_image_v, target_image_t: perturbed,
                                             "is_train:0": False})
                 noise_loss[i, j] = loss
-                image_difference[i, j] = np.sum(np.abs(reconstruction_image_v - reconstructed_with_noise))
+                image_difference[i, j] = np.mean(np.abs(reconstruction_image_v - reconstructed_with_noise))
 
         return base_loss, noise_loss, image_difference
 
