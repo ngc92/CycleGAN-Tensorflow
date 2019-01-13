@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
-from modeldef import CylceGanModelDef
+from modeldef import CycleGanModelDef
 from utils import logger, makedirs
 from model import CycleGAN
 from data_loader import get_data
@@ -18,7 +18,7 @@ class FastSaver(tf.train.Saver):
 
 
 class NoiseRobustness:
-    def __init__(self, model_dir, model_def: CylceGanModelDef):
+    def __init__(self, model_dir, model_def: CycleGanModelDef):
         self.model_dir = model_dir
         self.model_def = model_def
         self.session = None
@@ -137,6 +137,7 @@ def main():
     logger.info("Starting testing session.")
     with sv.managed_session() as sess:
         experiment = NoiseRobustness("", model.get_modeldef())
+        model.get_modeldef().to_json("cyclegan_model.json")
         experiment.session = sess
         noise_levels = np.linspace(0.0, 0.05, 20)
         base, noise, idiff = experiment.reconstruction_loss_a(test_A, noise_levels)
