@@ -80,7 +80,10 @@ def main():
     logdir = './logs'
     logdir = os.path.join(logdir, args.model)
 
-    with tf.train.MonitoredSession(tf.train.ChiefSessionCreator(checkpoint_dir=logdir)) as session:
+    with tf.Session() as session:
+        saver = tf.train.import_meta_graph(logdir)
+        saver.restore(session, logdir)
+
         experiment = NoiseRobustness(CycleGanModelDef.from_json("cyclegan_model.json"), session)
         noise_levels = np.linspace(0.0, 0.05, 20)
         base, noise, idiff = experiment.reconstruction_loss_a(test_A, noise_levels)
