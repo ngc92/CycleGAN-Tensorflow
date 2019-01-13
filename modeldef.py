@@ -35,7 +35,7 @@ class CycleGanModelDef:
             "loss_tensors": _get_names(self.loss_tensors._asdict())
         }
 
-        json.dump(data, target)
+        json.dump(data, target, indent=2)
 
     @staticmethod
     def from_json(source):
