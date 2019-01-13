@@ -33,13 +33,6 @@ parser.add_argument('--load_model', default='',
                     help='Model path to load (e.g., train_2017-07-07_01-23-45)')
 
 
-class FastSaver(tf.train.Saver):
-    def save(self, sess, save_path, global_step=None, latest_filename=None,
-             meta_graph_suffix="meta", write_meta_graph=True):
-        super(FastSaver, self).save(sess, save_path, global_step, latest_filename,
-                                    meta_graph_suffix, write_meta_graph)
-
-
 def run(args):
     logger.info('Read data:')
     train_A, train_B, test_A, test_B = get_data(args.task, args.image_size)
@@ -50,7 +43,7 @@ def run(args):
     variables_to_save = tf.global_variables()
     init_op = tf.variables_initializer(variables_to_save)
     init_all_op = tf.global_variables_initializer()
-    saver = FastSaver(variables_to_save)
+    saver = tf.train.Saver(variables_to_save)
 
     logger.info('Trainable vars:')
     var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
@@ -87,6 +80,8 @@ def run(args):
     if args.train:
         logger.info("Starting training session.")
         with sv.managed_session() as sess:
+            saver.save(sess, logdir, write_meta_graph=True)
+            exit(0)
             model.train(sess, summary_writer, train_A, train_B)
 
     logger.info("Starting testing session.")
