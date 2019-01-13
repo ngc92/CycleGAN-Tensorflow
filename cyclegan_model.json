@@ -1,0 +1,18 @@
+{
+  "image_tensors": {
+    "a": "image_a:0",
+    "b": "image_b:0",
+    "ab": "G_ab/c7s1-3/Tanh:0",
+    "ba": "G_ba_1/c7s1-3/Tanh:0",
+    "aba": "G_ba/c7s1-3/Tanh:0",
+    "bab": "G_ab_1/c7s1-3/Tanh:0"
+  },
+  "loss_tensors": {
+    "G_ab": "Mean_4:0",
+    "G_ba": "Mean_5:0",
+    "D_a": "mul:0",
+    "D_b": "mul_1:0",
+    "cycle_aba": "Mean_6:0",
+    "cycle_bab": "Mean_7:0"
+  }
+}
