@@ -26,41 +26,47 @@ class NoiseRobustness:
     def reconstruction_loss_a(self, images, noise_levels):
         a = self.model_def.image_tensors.a
         ab = self.model_def.image_tensors.ab
+        aba = self.model_def.image_tensors.aba
         la = self.model_def.loss_tensors.cycle_aba
 
-        return self.reconstruction_loss(images, noise_levels, a, ab, la)
+        return self.reconstruction_loss(images, noise_levels, a, ab, aba, la)
 
     def reconstruction_loss_b(self, images, noise_levels):
         b = self.model_def.image_tensors.b
         ba = self.model_def.image_tensors.ba
+        bab = self.model_def.image_tensors.bab
         lb = self.model_def.loss_tensors.cycle_bab
 
-        return self.reconstruction_loss(images, noise_levels, b, ba, lb)
+        return self.reconstruction_loss(images, noise_levels, b, ba, bab, lb)
 
-    def reconstruction_loss(self, images, noise_levels, source_image_ph, target_image_t, reconstruction_loss_t):
+    def reconstruction_loss(self, images, noise_levels, source_image_ph, target_image_t, 
+                            reconstruction_image_t, reconstruction_loss_t):
         session = self.session
         base_loss = np.zeros_like(images)
         noise_loss = np.zeros(shape=(len(images), len(noise_levels)))
+        image_difference = np.zeros(shape=(len(images), len(noise_levels)))
 
         for i, data in enumerate(images):
-            fetches = [target_image_t, reconstruction_loss_t]
+            fetches = [target_image_t, reconstruction_loss_t, reconstruction_image_t]
             source_image_v = np.expand_dims(data, axis=0)
 
-            image_ab, loss = session.run(fetches, feed_dict={source_image_ph: source_image_v, "is_train:0": False})
-            print(np.max(image_ab))
+            image_ab, loss, reconstruction_image_v = \
+                session.run(fetches, feed_dict={source_image_ph: source_image_v, "is_train:0": False})
             noise = np.random.randn(*image_ab.shape)
-            print(np.max(np.abs(noise)))
 
             base_loss[i] = loss
 
             for j, noise_level in enumerate(noise_levels):
                 perturbed = image_ab + noise * noise_level
 
-                loss = session.run(reconstruction_loss_t, feed_dict={source_image_ph: source_image_v,
-                                                                     target_image_t: perturbed, "is_train:0": False})
+                loss, reconstructed_with_noise = \
+                    session.run((reconstruction_loss_t, reconstruction_image_t),
+                                 feed_dict={source_image_ph: source_image_v, target_image_t: perturbed,
+                                            "is_train:0": False})
                 noise_loss[i, j] = loss
+                image_difference[i, j] = np.sum(np.abs(reconstruction_image_v - reconstructed_with_noise))
 
-        return base_loss, noise_loss
+        return base_loss, noise_loss, image_difference
 
 
 def main():
@@ -132,9 +138,10 @@ def main():
     with sv.managed_session() as sess:
         experiment = NoiseRobustness("", model.get_modeldef())
         experiment.session = sess
-        base, noise = experiment.reconstruction_loss_a(test_A, [0.01, 0.25, 0.5])
+        base, noise, idiff = experiment.reconstruction_loss_a(test_A, [0.01, 0.25, 0.5])
         print(np.mean(base))
         print(np.mean(noise, axis=0))
+        print(np.mean(idiff, axis=0))
 
 
 if __name__ == "__main__":
