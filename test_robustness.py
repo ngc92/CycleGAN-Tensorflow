@@ -130,7 +130,9 @@ def main():
     with sv.managed_session() as sess:
         experiment = NoiseRobustness("", model.get_modeldef())
         experiment.session = sess
-        print(experiment.reconstruction_loss_a(test_A, [0.01, 0.25, 0.5]))
+        base, noise = experiment.reconstruction_loss_a(test_A, [0.01, 0.25, 0.5])
+        print(np.mean(base))
+        print(np.mean(noise, axis=0))
 
 
 if __name__ == "__main__":
