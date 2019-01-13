@@ -54,7 +54,8 @@ class NoiseRobustness:
             for j, noise_level in enumerate(noise_levels):
                 perturbed = image_ab + noise * noise_level
 
-                loss = session.run(reconstruction_loss_t, feed_dict={target_image_t: perturbed, "is_train:0": False})
+                loss = session.run(reconstruction_loss_t, feed_dict={source_image_ph: source_image_v,
+                                                                     target_image_t: perturbed, "is_train:0": False})
                 noise_loss[i, j] = loss
 
         return base_loss, noise_loss
