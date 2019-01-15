@@ -92,9 +92,13 @@ class CycleGAN(object):
 
         # Generate images (a->b->a and b->a->b)
         image_ab = self.image_ab = G_ab(image_a)
-        image_aba = self.image_aba = G_ba(image_ab)
+        noise_strength = tf.cond(self.is_train, lambda: 0.05, lambda: 0.0)
+
+        noise_ab = tf.random_normal(tf.shape(image_ab), 0.0, noise_strength)
+        image_aba = self.image_aba = G_ba(image_ab + noise_ab)
         image_ba = self.image_ba = G_ba(image_b)
-        image_bab = self.image_bab = G_ab(image_ba)
+        noise_ba = tf.random_normal(tf.shape(image_ab), 0.0, noise_strength)
+        image_bab = self.image_bab = G_ab(image_ba + noise_ba)
 
         self.image_tensors = modeldef.ImageTensors(self.image_a, self.image_b, self.image_ab, self.image_ba,
                                                    self.image_aba, self.image_bab)
