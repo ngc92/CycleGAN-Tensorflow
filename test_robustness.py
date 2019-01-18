@@ -89,7 +89,7 @@ def main():
 
         print(np.mean(base))
         result_data = [noise_levels, np.mean(noise, axis=0), np.mean(idiff, axis=0)]
-        np.savetxt(os.path.join(logdir, "robustness.txt"), result_data)
+        np.savetxt(os.path.join(logdir, "robustness.txt"), np.transpose(result_data))
 
 
 if __name__ == "__main__":
