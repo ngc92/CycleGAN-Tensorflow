@@ -81,7 +81,7 @@ def main():
     with tf.Session() as session:
         latest_checkpoint = tf.train.latest_checkpoint(logdir)  # type: str
         saver = tf.train.import_meta_graph(latest_checkpoint + ".meta")
-        saver.restore(session, logdir)
+        saver.restore(session, latest_checkpoint)
 
         experiment = NoiseRobustness(CycleGanModelDef.from_json("cyclegan_model.json"), session)
         noise_levels = np.linspace(0.0, 0.05, 20)
